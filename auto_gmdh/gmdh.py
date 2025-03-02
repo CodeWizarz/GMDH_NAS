@@ -9,26 +9,29 @@ class GMDH:
         self.threshold = threshold
         self.validation_split = validation_split
         self.models = []
+        print(f"🛠 Initializing GMDH with max_layers={max_layers}, threshold={threshold}, validation_split={validation_split}")
 
     def _generate_polynomials(self, X):
         """ Generate polynomial terms: x1, x2, x1*x2, x1^2, x2^2, x1^3, x2^3 """
+        print("🔢 Generating polynomial features")
         n_samples, n_features = X.shape
         terms = [X]
 
         for i in range(n_features):
             for j in range(i, n_features):
-                terms.append(X[:, i] * X[:, j])   # x1 * x2
-                terms.append(X[:, i] ** 2)        # x1^2
-                terms.append(X[:, j] ** 2)        # x2^2
-                terms.append(X[:, i] ** 3)        # x1^3
-                terms.append(X[:, j] ** 3)        # x2^3
+                terms.append(X[:, i] * X[:, j])  # x1 * x2
+
+        terms.append(X ** 2)
+        terms.append(X ** 3)
 
         return np.column_stack(terms)
 
     def _train_layer(self, X, y):
         """ Train models for a single layer with validation """
+        print("📊 Training a new layer")
         X_poly = self._generate_polynomials(X)
         X_train, X_val, y_train, y_val = train_test_split(X_poly, y, test_size=self.validation_split)
+        print(f"📌 Training samples: {X_train.shape[0]}, Validation samples: {X_val.shape[0]}")
 
         best_models = []
         for i in range(X_poly.shape[1]):
@@ -37,6 +40,7 @@ class GMDH:
                 y_pred = X_val[:, [i]] @ coef
                 error = mean_squared_error(y_val, y_pred)
                 best_models.append((coef, i, error))
+                print(f"✅ Feature {i}: MSE = {error}")
             except Exception as e:
                 print(f"⚠️ Skipping invalid feature index {i}: {e}")
 
@@ -45,8 +49,10 @@ class GMDH:
 
     def fit(self, X, y):
         """ Train GMDH model with cross-validation """
+        print("🚀 Starting GMDH training")
         X_current = X
         for layer in range(self.max_layers):
+            print(f"🛠 Training layer {layer+1}/{self.max_layers}")
             models = self._train_layer(X_current, y)
             if not models:
                 print(f"⚠️ Layer {layer} has no valid models. Stopping early.")
@@ -60,9 +66,11 @@ class GMDH:
 
         if not self.models:
             raise RuntimeError("Training failed: No valid models were generated.")
+        print("✅ GMDH training completed")
 
     def predict(self, X):
         """ Predict using trained GMDH model """
+        print("🔮 Making predictions")
         if not self.models:
             print("⚠️ No trained models available. Returning zeros.")
             return np.zeros(X.shape[0])
@@ -88,4 +96,5 @@ class GMDH:
             feature_values = X_current[:, feature_index].reshape(-1, 1)
             final_preds += (feature_values @ coef.reshape(-1, 1)).flatten()
 
+        print("✅ Prediction complete")
         return final_preds

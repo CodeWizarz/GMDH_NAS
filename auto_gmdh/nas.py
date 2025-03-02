@@ -1,7 +1,6 @@
 import numpy as np
 from bayes_opt import BayesianOptimization
-from .gmdh import GMDH
-from sklearn.model_selection import train_test_split
+from gmdh_main import GMDH
 from sklearn.metrics import mean_squared_error
 
 # Generate synthetic dataset
@@ -41,3 +40,22 @@ def optimize_gmdh():
 
     optimizer.maximize(init_points=5, n_iter=20)
     return optimizer.max["params"]
+
+# Train the best GMDH model based on optimization results
+def train_best_gmdh():
+    best_params = optimize_gmdh()
+    print(f"✅ Best Hyperparameters: {best_params}")
+
+    X, y = generate_data()
+    model = GMDH(
+        max_layers=int(best_params["max_layers"]),
+        threshold=best_params["threshold"],
+        validation_split=best_params["validation_split"]
+    )
+    
+    model.fit(X, y)
+    predictions = model.predict(X)
+    
+    mse = mean_squared_error(y, predictions)
+    print(f"🚀 Optimized Model MSE: {mse}")
+    return model
