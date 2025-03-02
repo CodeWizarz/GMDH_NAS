@@ -1,7 +1,7 @@
 import numpy as np
 import random
 import torch
-from gmdh_nas.gmdh import GMDH
+from auto_gmdh.gmdh import GMDH
 from sklearn.metrics import mean_squared_error
 
 # Fix randomness i added this as rerunning the same give different mean squared errors from the cross-validation
